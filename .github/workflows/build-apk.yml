@@ -25,11 +25,27 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Extract Source ZIP
+      - name: Extract Project
         run: |
-          mkdir project
+          mkdir -p project
           unzip -o MyanmarKaraokePro_Source.zip -d project
-          cp -R project/. .
+
+          SOURCE_ZIP="$(find project -type f -name 'MyanmarKaraokePro_Source.zip' -print -quit)"
+
+          if [ -n "$SOURCE_ZIP" ]; then
+            mkdir -p project/source
+            unzip -o "$SOURCE_ZIP" -d project/source
+            PROJECT_DIR="$(dirname "$(find project/source -type f -name 'settings.gradle.kts' -print -quit)")"
+          else
+            PROJECT_DIR="$(dirname "$(find project -type f -name 'settings.gradle.kts' -print -quit)")"
+          fi
+
+          if [ -z "$PROJECT_DIR" ] || [ "$PROJECT_DIR" = "." ]; then
+            echo "ERROR: Gradle project not found"
+            exit 1
+          fi
+
+          cp -R "$PROJECT_DIR"/. .
 
       - name: Build APK
         run: gradle assembleDebug
@@ -39,4 +55,3 @@ jobs:
         with:
           name: Myanmar-Karaoke-Pro-APK
           path: app/build/outputs/apk/debug/app-debug.apk
-          
